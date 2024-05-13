@@ -48,7 +48,6 @@ print_ciphertext:
     mov edx, msglen
     int 0x80
 
-    ; Exit the program
     mov eax, 1
     xor ebx, ebx
     int 0x80
