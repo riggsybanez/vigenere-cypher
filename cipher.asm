@@ -1,55 +1,60 @@
 section .data
-  msg_len equ 5        ; Length of the input message (including null terminator)
-  key_len equ 3        ; Length of the encryption key (including null terminator)
+    msglen equ 5
+    stdout equ 1
 
-  input_msg db "HELLO",0    ; Message (ensure null termination with '0')
-  input_key db "KEY",0     ; Encryption key (ensure null termination with '0')
-  cipher_text db msg_len dup(0); Buffer for the ciphertext (allocate enough space)
+    plaintext db "HELLO", 0
+    keyword db "KEYKE", 0
+    keyword_len equ $ - keyword
+    ciphertext db msglen dup(0)
 
 section .text
-  global _start
+    global _start
 
 _start:
-  ; Encrypt the message using the Vigenère cipher
-  mov esi, input_msg      ; Load the address of the message into esi
-  mov edi, cipher_text     ; Load the address of the ciphertext buffer into edi
-  mov ebx, input_key      ; Load the address of the key into ebx
-  mov ecx, msg_len       ; Load the length of the input message (including null)
-  mov edx, key_len       ; Load the length of the key into edx
-  mov ecx, 0  ; Initialize counter for processed characters
+    mov esi, plaintext
+    mov edi, keyword 
+
+    mov ecx, msglen     
+    xor ebx, ebx        
 
 encrypt_loop:
-  cmp ecx, msg_len-1  ; Check if processed all characters (excluding null)
-  je print_encrypted_message  ; If processed all, jump to print
+    ; Calculate the current key character
+    movzx eax, byte [edi + ebx]  
+    sub eax, 'A'
+    mov dl, al
 
-  mov al, byte [esi]      ; Load the current character from the message
-   ; ... (rest of the encryption logic) ...
-   inc ecx  ; Increment counter for processed characters
+    ; Calculate the current plaintext character
+    movzx eax, byte [esi + ebx]  
+    sub eax, 'A'
 
-  inc esi            ; Move to the next character in the message
-  inc edi            ; Move to the next character in the ciphertext
-  dec ecx            ; Decrement message length (not used in loop anymore)
+    ; Encrypt the current character using Vigenère cipher (arithmetic method)
+    add al, dl
+    and al, 0x1F
+    add al, 'A'
 
-  ; Fix for lea instruction error (as discussed previously):
-  mov ecx, ebx  ; Copy current key position to temporary register
-  add ecx, edx  ; Calculate end of key address in ecx
+    ; Store the encrypted character in ciphertext buffer
+    mov [ciphertext + ebx], al
 
-  cmp ebx, ecx  ; Compare current key position with end address
-  jb continue_encrypting    ; If not at the end of the key, continue encrypting
-  sub ebx, edx         ; Wrap around to the beginning of the key
-continue_encrypting:
-  jmp encrypt_loop       ; Continue encrypting
+    ; Move to the next character of the keyword (cycling if necessary)
+    inc ebx
+    cmp ebx, keyword_len
+    jl continue_loop
+    mov ebx, 0  ; Reset keyword index
 
-print_encrypted_message:
-  ; Print the encrypted message using system call (assuming Linux/x86)
-  mov eax, 4           ; syscall number for write
-  mov ebx, 1           ; file descriptor 1 (stdout)
-  mov ecx, cipher_text      ; address of the ciphertext buffer
-  mov edx, ecx  ; Use counter (ecount) for actual processed characters
-  sub edx, 1  ; Exclude the null terminator from printing
-  int 0x80            ; make syscall
+continue_loop:
+    ; Check if there are more characters to encrypt
+    cmp ebx, msglen
+    jl encrypt_loop
 
-  ; Exit the program
-  mov eax, 1          ; syscall number for exit
-  xor ebx, ebx         ; exit status 0
-  int 0x80           ; make syscall
+print_ciphertext:
+    ; Print the ciphertext
+    mov eax, 4
+    mov ebx, stdout
+    mov ecx, ciphertext
+    mov edx, msglen
+    int 0x80
+
+    ; Exit the program
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
