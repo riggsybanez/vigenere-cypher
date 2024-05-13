@@ -35,7 +35,7 @@ encrypt_loop:
     inc ebx
     cmp ebx, keyword_len
     jl continue_loop
-    mov ebx, 0  ; Reset keyword index
+    mov ebx, 0
 
 continue_loop:
     cmp ebx, msglen
