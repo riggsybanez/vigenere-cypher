@@ -5,15 +5,12 @@ section .data
     input_msg db "HELLO",0       
     input_key db "KEY",0          
     cipher_text db msg_len dup(0) 
-
-    ; Define the Vigenère square
     vigenere_square db 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 section .text
     global _start
 
 _start:
-    
     mov esi, input_msg            
     mov edi, cipher_text          
     mov ebx, input_key            
@@ -45,7 +42,6 @@ print_encrypted_message:
     mov edx, msg_len               
     int 0x80                       
 
-    ; Exit the program
     mov eax, 1                    
     xor ebx, ebx                  
     int 0x80                      
